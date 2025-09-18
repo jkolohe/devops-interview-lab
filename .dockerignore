@@ -1,0 +1,10 @@
+# Reduce build context
+.git
+.github
+__pycache__/
+*.pyc
+ansible/
+logs/
+scripts/
+*.md
+*.zip

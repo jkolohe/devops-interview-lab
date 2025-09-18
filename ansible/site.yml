@@ -1,0 +1,44 @@
+---
+- name: "Local lab playbook (safe)"
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    app_port: 8000
+    env: dev
+  tasks:
+    - name: "Ensure /tmp/lab exists"
+      ansible.builtin.file:
+        path: /tmp/lab
+        state: directory
+        mode: "0755"
+        owner: jason
+        group: jason
+
+    - name: "Create base config"
+      ansible.builtin.copy:
+        dest: /tmp/lab/app.conf
+        content: |
+          APP_PORT={{ app_port }}
+          ENV={{ env }}
+        mode: "0644"
+        owner: jason
+        group: jason
+
+    - name: "Ensure ENV line exists"
+      ansible.builtin.lineinfile:
+        path: /tmp/lab/app.conf
+        line: "ENV={{ env }}"
+        create: true
+        mode: "0644"
+        owner: jason
+        group: jason
+
+    - name: "Show config (slurp)"
+      ansible.builtin.slurp:
+        path: /tmp/lab/app.conf
+      register: cfg_raw
+
+    - name: "Print config"
+      ansible.builtin.debug:
+        msg: "{{ cfg_raw.content | b64decode }}"
