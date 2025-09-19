@@ -18,10 +18,18 @@ jobs:
       - name: Create venv
         run: python -m -ven ven
 
-      - name: Install Python tooling
+      - name: Create venv and install Python tooling
         run: |
-          python -m pip install --upgrade pip
+          python -m venv .venv
+          source .venv/bin/activate
+          python -m pip install--upgrade pip
           pip install flake8 ansible ansible-lint requests
+
+      - name: Use tools inside venv
+        run: |
+          source .venv/bin/activate
+          flake8 app
+          ansible-lint ansible/site.yml
 
       - name: Lint Python
         run: flake8 app
