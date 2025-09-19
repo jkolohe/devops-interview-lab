@@ -15,21 +15,58 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Create venv
-        run: python -m -ven ven
 
-      - name: Create venv and install Python tooling
+      - name: Install Python tooling
         run: |
-          python -m venv .venv
-          source .venv/bin/activate
-          python -m pip install--upgrade pip
+          python -m pip install --upgrade pip
           pip install flake8 ansible ansible-lint requests
 
-      - name: Use tools inside venv
+      - name: Lint Python
+        run: flake8 app
+
+      - name: Lint Ansible
+        run: ansible-lint ansible/site.yml
+
+      - name: Hadolint Dockerfile (optimized)
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile.optimized
+
+      - name: Build Docker image
+        run: docker build -t lab-app:ci -f Dockerfile.optimized .
+
+      - name: Smoke test container
         run: |
-          source .venv/bin/activate
-          flake8 app
-          ansible-lint ansible/site.yml
+          docker run -d -p 8000:8000 --name lab-app lab-app:ci
+          sleep 2
+          curl -sSf http://localhost:8000/health
+        shell: bash
+
+      - name: Stop container
+        if: always()
+        run: docker rm -f lab-app
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 ansible ansible-lint requests
 
       - name: Lint Python
         run: flake8 app
